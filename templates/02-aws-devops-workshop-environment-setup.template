@@ -42,10 +42,10 @@
     },
 
     "AWSRegionVirt2AMI": {
-      "us-east-1": {"HVM": "ami-8c1be5f6"},
-      "us-east-2": {"HVM": "ami-c5062ba0"},
-      "us-west-2": {"HVM": "ami-e689729e"},
-      "us-west-1": {"HVM":"ami-02eada62"},
+      "us-east-1": {"HVM": "ami-09479453c5cde9639"},
+      "us-east-2": {"HVM": "ami-023c8dbf8268fb3ca"},
+      "us-west-2": {"HVM": "ami-0bb5806b2e825a199"},
+      "us-west-1": {"HVM":"ami-06ff511fea5db2c99"},
       "ap-northeast-1": {"HVM": "ami-2a69be4c"},
       "ap-northeast-2": {"HVM": "ami-9bec36f5"},
       "ap-south-1": {"HVM": "ami-4fc58420"},
