@@ -82,7 +82,7 @@ user:~/environment $ git clone https://github.com/marcelokscunha/aws-devops-esse
 
 ```console
 user:~/environment $ unzip ./aws-devops-essential/sample-app/Web-App-Archive.zip
-user:~/environment $ mv -v ./aws-devops-essential/sample-app/Web-App-Archive/* WebAppRepo/
+user:~/environment $ mv -v ./Web-App-Archive/* WebAppRepo/
 ```
 
 After moving the files, your local repo should like the one below. ![cloud9](./img/Cloud9-IDE-Screen-Sample.png)
