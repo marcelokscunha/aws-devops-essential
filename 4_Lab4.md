@@ -168,26 +168,59 @@ After the template deployment is complete, go to the console of your CodePipelin
 
 4. Click on the “Release” button again (upper right) to check the security validations.
 
-5. See that our pipeline has failed. Click on “Details” under the action “StaticCodeAnalysis” of the “CFNParsing” stage and then click on “Link to execution details”.
+5. See that our pipeline has failed. Click on “Details” under the action “StaticCodeAnalysis” of the “CFNParsing” stage.
 
-IMG
+![3-3](./img/Lab4-Stage-3-3.png)
 
-The CloudWatch logs associated to our Lambda function will be opened.
-Select the newest Log Stream and go to the bottom of the log:
+6. Click on “Link to execution details”.
 
-IMG
+![3-4](./img/Lab4-Stage-3-4.png)
 
-We can see that the rules “IngressOpenToWorld” and “SSHOpenToWorld” matched, causing the pipeline to fail and the risk value associated.
+7. The CloudWatch logs associated to our Lambda function will be opened. Select the newest Log Stream:
 
+![3-5](./img/Lab4-Stage-3-5.png)
 
-Verify the Lambda functions for seeing the security validation logic. Note that the first Lambda function checks DynamoDB for the security rules.
+8. Go to the bottom of the log:
 
-Go to the DynamoDB console and check the “DDBRules”. See how rules, categories and risk values could be used to determine when to deploy to next stage or not. Security team could specify rules once and the automation would take care of the rest.
+![3-6](./img/Lab4-Stage-3-6.png)
+![3-7](./img/Lab4-Stage-3-7.png)
 
-IMG-DDB
+We can see that the rules __“IngressOpenToWorld__” and __“SSHOpenToWorld”__ matched, causing the pipeline to fail and the risk value associated.
+
+9. Open the Lambda functions created, `lab4-resources-CFNValidateLambda-...` and `TestStackValidationLambda-...`. Take a moment to see the security validation logic. Note that the first Lambda function checks DynamoDB for the security rules.
+
+10. Go to the DynamoDB console and check the “DDBRules”. See how rules, categories and risk values could be used to determine when to deploy to next stage or not. Security team could specify rules once and the automation would take care of the rest.
+
+![3-8](./img/Lab4-Stage-3-8.png)
+
+![3-9](./img/Lab4-Stage-3-9.png)
+
+__Fix the security issues__:
+
+11. Go to the Cloud9 IDE and open the `02-aws-devops-workshop-environment-setup.template` file. Check the line 262:
+
+![3-10](./img/Lab4-Stage-3-10.png)
+
+12. Delete this line, delete __the comma the line before__ and __save it (ctrl+s)__:
+
+![3-11](./img/Lab4-Stage-3-11.png)
+
+13. Push the fixed file to the CodeCommit Repository:
+
+```console
+~/environment/WebAppRepo (master) $ git add 02-aws-devops-workshop-environment-setup.template
+~/environment/WebAppRepo (master) $ git commit -m "Fixed security issue in CF template"
+~/environment/WebAppRepo (master) $ git push origin master
+```
+
+14. Now a new execution should be triggered by the push to CodeCommit repository. All stages should be executed successfully:
+
+![3-12](./img/Lab4-Stage-3-12.png)
+
+![3-13](./img/Lab4-Stage-3-13.png)
 
 ### Stage 4: Congratulations, you have finished the workshop!
-You have learned how to create your own secure, CI/CD pipeline with AWS tools like CodePipeline, CodeCommit, CodeBuild, CodeDeploy, CloudFormation, Lambda.
+You have learned how to create your own __secure__, CI/CD pipeline with AWS tools like CodePipeline, CodeCommit, CodeBuild, CodeDeploy, CloudFormation, Lambda.
 
 [Check the this AWS blog post for more details on DevSecOps](https://aws.amazon.com/blogs/devops/implementing-devsecops-using-aws-codepipeline/).
 
@@ -196,7 +229,7 @@ You have learned how to create your own secure, CI/CD pipeline with AWS tools li
 Check the following repository:
 https://github.com/stelligent/pipeline-dashboard
 
-This solution developed by Stelligent shows how we could evaluate our pipeline metrics and use this data to evolve our DevOps organization.
+This solution developed by Stelligent shows how we could evaluate our pipeline metrics (MTTR, Lead Time, MTBF, etc.) and use this data to evolve our DevOps organization.
 
 ![extra-1](./img/Lab4-Stage-extra-1.png)
 

@@ -59,7 +59,7 @@ def get_template(s3, artifact, file_in_zip):
     key = artifact['location']['s3Location']['objectKey']
 
     with tempfile.NamedTemporaryFile() as tmp_file:
-        print("Retrieving s3://" + bucket + "/" + key)
+        #print("Retrieving s3://" + bucket + "/" + key)
         s3.download_file(bucket, key, tmp_file.name)
         with zipfile.ZipFile(tmp_file.name, 'r') as zip:
             zip.printdir()
@@ -77,8 +77,8 @@ def put_job_success(job, message):
         Exception: Any exception thrown by .put_job_success_result()
 
     """
-    print('Putting job success')
-    print(message)
+    #print('Putting job success')
+    #print(message)
     code_pipeline.put_job_success_result(jobId=job)
 
 def put_job_failure(job, message):
@@ -116,12 +116,12 @@ def continue_job_later(job, message):
     # This data will be available when a new job is scheduled to continue the current execution
     continuation_token = json.dumps({'previous_job_id': job})
 
-    print('Putting job continuation')
-    print(message)
+    #print('Putting job continuation')
+    # print(message)
     code_pipeline.put_job_success_result(jobId=job, continuationToken=continuation_token)
 
 def get_user_params(job_data):
-    print(job_data)
+    # print(job_data)
     """Decodes the JSON user parameters and validates the required properties.
 
     Args:
@@ -239,7 +239,7 @@ def add_rules(logTable):
             'ruletype' : {'S': "regex"},
             'ruledata' : {'S': "^.*Ingress.*((0\.){3}0\/0)"},
             'riskvalue' : {'N': "100"},
-            'active' : {'S': "Y"}
+            'active' : {'S': "N"}
         }
     )
 
@@ -286,17 +286,25 @@ def evaluate_template(rules, template):
     ec2Resources = []
     failedRules = []
     jsonTemplate = json.loads(template)
-    print(json.dumps(jsonTemplate, sort_keys=True, indent=4, separators=(',', ': ')))
-    print(rules)
+    # print(json.dumps(jsonTemplate, sort_keys=True, indent=4, separators=(',', ': ')))
+
     for key in jsonTemplate['Resources'].keys():
         if "SecurityGroup" in jsonTemplate['Resources'][key]['Type']:
+            print("Loop1 - looking for SecurityGroup in template - jsonTemplate['Resources'][key]: ")
+            print(jsonTemplate['Resources'][key])
             sgResources.append(jsonTemplate['Resources'][key])
-        elif "EC2::Instance" in jsonTemplate['Resources'][key]['Type']:
-            ec2Resources.append(jsonTemplate['Resources'][key])
+        # elif "EC2::Instance" in jsonTemplate['Resources'][key]['Type']:
+        #     print("Loop1 - looking for EC2::Instance in template - jsonTemplate['Resources'][key]: " + jsonTemplate['Resources'][key])
+        #     ec2Resources.append(jsonTemplate['Resources'][key])
 
     for n in range(len(sgResources)):
         for m in range(len(rules['sgRules'])):
             if rules['sgRules'][m]['active']['S'] == "Y":
+                print("Loop2 - matching rules to resources for SecurityGroup")
+                print("Resource = ")
+                print(n)
+                print("Rule = ")
+                print(m)
                 if re.match(rules['sgRules'][m]['ruledata']['S'], str(sgResources[n])):
                     risk = risk + int(rules['sgRules'][m]['riskvalue']['N'])
                     failedRules.append(str(rules['sgRules'][m]['rule']['S']))
@@ -305,16 +313,16 @@ def evaluate_template(rules, template):
                     print("Riskvalue: " + rules['sgRules'][m]['riskvalue']['N'])
                     print("")
 
-    for n in range(len(ec2Resources)):
-        for m in range(len(rules['ec2Rules'])):
-            if rules['ec2Rules'][m]['active']['S'] == "Y":
-                if re.match(rules['ec2Rules'][m]['ruledata']['S'], str(ec2Resources[n])):
-                    risk = risk + int(rules['ec2Rules'][m]['riskvalue']['N'])
-                    failedRules.append(str(rules['ec2Rules'][m]['rule']['S']))
-                    print("Matched rule: " + str(rules['ec2Rules'][m]['rule']['S']))
-                    print("Resource: " + str(ec2Resources[n]))
-                    print("Riskvalue: " + rules['ec2Rules'][m]['riskvalue']['N'])
-                    print("")
+    # for n in range(len(ec2Resources)):
+    #     for m in range(len(rules['ec2Rules'])):
+    #         if rules['ec2Rules'][m]['active']['S'] == "Y":
+    #             if re.match(rules['ec2Rules'][m]['ruledata']['S'], str(ec2Resources[n])):
+    #                 risk = risk + int(rules['ec2Rules'][m]['riskvalue']['N'])
+    #                 failedRules.append(str(rules['ec2Rules'][m]['rule']['S']))
+    #                 print("Matched rule: " + str(rules['ec2Rules'][m]['rule']['S']))
+    #                 print("Resource: " + str(ec2Resources[n]))
+    #                 print("Riskvalue: " + rules['ec2Rules'][m]['riskvalue']['N'])
+    #                 print("")
     print("Risk value: " +str(risk))
     return risk, failedRules
 
@@ -349,7 +357,7 @@ def s3_next_step(s3, bucket, risk, failedRules, template, job_id):
         put_job_success(job_id, 'Job succesful, medium risk detected, manual approval needed.')
     elif risk >= 50:
         tmp_file.close()
-        print("High risk file, fail pipeline")
+        # print("High risk file, fail pipeline")
         put_job_failure(job_id, 'Function exception: Failed filters ' + str(failedRules))
     return 0
 
@@ -366,7 +374,7 @@ def lambda_handler(event, context):
     """
     try:
         # Print the entire event for tracking
-        print("Received event: " + json.dumps(event))#, indent=2))
+        # print("Received event: " + json.dumps(event))#, indent=2))
 
         # Extract the Job ID
         job_id = event['CodePipeline.job']['id']
@@ -392,10 +400,14 @@ def lambda_handler(event, context):
 
         # Get the JSON template file out of the artifact
         template = get_template(s3, input_artifact_data, template_file)
-        print("Template: " + template)
+        #print("Template: " + template)
 
         # Get validation rules from DDB
         rules = get_rules()
+        
+        print("--------------------")
+        print("MY RULES ARE ")
+        print(rules)
 
         # Validate template from risk perspective. FailedRules can be used if you wish to expand the script to report failed items
         risk, failedRules = evaluate_template(rules, template)
