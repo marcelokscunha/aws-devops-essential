@@ -106,13 +106,13 @@ The next stages remain the same, building, deploying the code to dev and prod en
 ### Stage 3: Deploy the resources:
 1. Create a S3 bucket and upload the zip file for our Lambda functions:
 ```console
-aws s3 mb <YOUR-INITIALS>-$accountId-$region
-aws s3 cp ./codepipeline-lambda.zip s3://<YOUR-INITIALS>-$accountId-$region
+~/environment/WebAppRepo (master) $ aws s3 mb s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
+~/environment/WebAppRepo (master) $ aws s3 cp ../aws-devops-essential/sample-app/codepipeline-lambda.zip s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
 ```
 
 2. Create the resources for our DevSecOps stages in the pipeline:
 ```console
-aws cloudformation create-stack lab4-resources --template-body file://lab4-resources.json --capabilities CAPABILITY_IAM --parameters ParameterKey=S3Bucket,ParameterValue=<YOUR-INITIALS>-$accountId-$region --region $region
+~/environment/WebAppRepo (master) $ aws cloudformation create-stack --stack-name lab4-resources --template-body file://../aws-devops-essential/templates/lab4-resources.json --capabilities CAPABILITY_IAM --parameters ParameterKey=S3Bucket,ParameterValue=<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>> --region <<REPLACE-YOUR-REGION-ID>>
 ```
 
 After the template deployment is complete, go to the CodePipeline console.
