@@ -130,7 +130,7 @@ For more information, see [Browse the Contents of a Repository](http://docs.aws.
 
 ```console
 user:~/environment/WebAppRepo (master) $ aws cloudformation create-stack --stack-name DevopsWorkshop-roles \
---template-body ../aws-devops-essential/templates/01-aws-devops-workshop-roles.template \
+--template-body file://../aws-devops-essential/templates/01-aws-devops-workshop-roles.template \
 --capabilities CAPABILITY_IAM
 ```
 
