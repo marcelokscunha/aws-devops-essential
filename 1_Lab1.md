@@ -72,19 +72,17 @@ Provide your Git HTTPs credential when prompted. You would be seeing the followi
 
 ### Stage 3: Commit changes to Remote Repo
 
-1. Download the Sample Web App Archive and other configuration files by running the following commands from IDE terminal.
+1. Clone the repository to get the configuration files by running the following commands from IDE terminal.
 
 ```console
-user:~/environment $ wget https://github.com/awslabs/aws-devops-essential/raw/master/sample-app/Web-App-Archive.zip
-
 user:~/environment $ git clone https://github.com/marcelokscunha/aws-devops-essential.git
 ```
 
 2. Unarchive and copy all the **_contents_** of the unarchived folder to your local repo folder.
 
 ```console
-user:~/environment $ unzip Web-App-Archive.zip
-user:~/environment $ mv -v Web-App-Archive/* WebAppRepo/
+user:~/environment $ unzip ./aws-devops-essential/sample-app/Web-App-Archive.zip
+user:~/environment $ mv -v ./aws-devops-essential/sample-app/Web-App-Archive/* WebAppRepo/
 ```
 
 After moving the files, your local repo should like the one below. ![cloud9](./img/Cloud9-IDE-Screen-Sample.png)
@@ -132,7 +130,7 @@ For more information, see [Browse the Contents of a Repository](http://docs.aws.
 
 ```console
 user:~/environment/WebAppRepo (master) $ aws cloudformation create-stack --stack-name DevopsWorkshop-roles \
---template-body https://s3.amazonaws.com/devops-workshop-0526-2051/01-aws-devops-workshop-roles.template \
+--template-body ../aws-devops-essential/templates/01-aws-devops-workshop-roles.template \
 --capabilities CAPABILITY_IAM
 ```
 

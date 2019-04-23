@@ -7,10 +7,10 @@ We want to control our infrastrucure in order to enforce security policies.
 1. Let’s make the resources in the Lab become code!
 
 ```console
-~/environment/WebAppRepo (master) $ cp aws-devops-essential/templates/02-aws-devops-workshop-environment-setup.template ./WebAppRepo/
+~/environment/WebAppRepo (master) $ cp ../aws-devops-essential/templates/02-aws-devops-workshop-environment-setup.template ./
 ```
 
-2. Take a few minutes to review in the Cloud9 IDE the template we just copied. Check out some CloudFormation intrinsic functions and features (Mappings, Fn::Join, Ref, etc).
+2. Take a few minutes to review in the Cloud9 IDE the template we just copied. Check out some CloudFormation intrinsic functions and features (`Mappings`, `Fn::Join`, `Ref`, etc).
 
 3. Let’s push this template to our CodeCommit Repo:
 
@@ -109,11 +109,12 @@ The next stages remain the same, building, deploying the code to dev and prod en
 1. Create a S3 bucket and upload the zip file for our Lambda functions:
 ```console
 ~/environment/WebAppRepo (master) $ aws s3 mb s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
-~/environment/WebAppRepo (master) $ aws s3 cp ../aws-devops-essential/sample-app/cfn_validate_lambda.py.zip s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
-~/environment/WebAppRepo (master) $ aws s3 cp ../aws-devops-essential/sample-app/stack_validate_lambda.py.zip s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
+~/environment/WebAppRepo (master) $ aws s3 cp ../aws-devops-essential/sample-app/codepipeline-lambda.zip s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
 ```
 
 2. Create the resources for our DevSecOps stages in the pipeline:
+
+    Use the same region for all resources!
 ```console
 ~/environment/WebAppRepo (master) $ aws cloudformation create-stack --stack-name lab4-resources --template-body file://../aws-devops-essential/templates/lab4-resources.json --capabilities CAPABILITY_IAM --parameters ParameterKey=S3Bucket,ParameterValue=<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>> --region <<REPLACE-YOUR-REGION-ID>>
 ```
@@ -213,9 +214,11 @@ __Fix the security issues__:
 ~/environment/WebAppRepo (master) $ git push origin master
 ```
 
-14. Now a new execution should be triggered by the push to CodeCommit repository. All stages should be executed successfully:
+14. Now a new execution should be triggered by the push to CodeCommit repository:
 
 ![3-12](./img/Lab4-Stage-3-12.png)
+
+All stages should be executed successfully:
 
 ![3-13](./img/Lab4-Stage-3-13.png)
 
