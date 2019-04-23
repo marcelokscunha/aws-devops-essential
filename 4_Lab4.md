@@ -1,162 +1,165 @@
 
-## Lab 4 (Optional) - Using Lambda as Test Stage in CodePipeline
+## Lab 4 - Infrastructure as a Code and DevSecOps:
 
-### Stage 1: Create a sample Lambda function
+### Stage 1: IaaC
+We want to control our infrastrucure in order to enforce security policies. 
 
-1. Go to Cloud9 IDE
-2. On the right hand side-menu, select **AWS Resources**
-3. Expand Lambda, and select **λ+** [Create a lambda function]
-4. Enter Function Name as **MyLambdaFunctionForAWSCodePipeline**
-5. Click **Next**
-6. Select runtime as **Node.js 6.10** and blue print as **empty-nodejs**
-7. Click **Next**
-8. Select Function trigger as **None** and click **Next**
-9. For Role, select **choose an existing role** and select **CodePipelineLambdaExecRole** which we created as part of the Lab 1 setup.
-10. Click **Next** and preview the changes. Once done, click **Finish**.
-![LambdaConfig](./img/Lab4-Lambda-Config.png)
+1. Let’s make the resources in the Lab become code!
 
-**Note:** Cloud9 will create a local Lambda function named MyLambdaFunctionForAWSCodePipeline.
-
-11. Then **copy** the following code into the Lambda function **index.js** and **save** it.
-
-```js
-var assert = require('assert');
-var AWS = require('aws-sdk');
-var http = require('http');
-
-exports.handler = function(event, context) {
-
-    var codepipeline = new AWS.CodePipeline();
-
-    // Retrieve the Job ID from the Lambda action
-    var jobId = event["CodePipeline.job"].id;
-
-    // Retrieve the value of UserParameters from the Lambda action configuration in AWS CodePipeline, in this case a URL which will be
-    // health checked by this function.
-    var url = event["CodePipeline.job"].data.actionConfiguration.configuration.UserParameters;
-
-    // Notify AWS CodePipeline of a successful job
-    var putJobSuccess = function(message) {
-        var params = {
-            jobId: jobId
-        };
-        codepipeline.putJobSuccessResult(params, function(err, data) {
-            if(err) {
-                context.fail(err);
-            } else {
-                context.succeed(message);
-            }
-        });
-    };
-
-    // Notify AWS CodePipeline of a failed job
-    var putJobFailure = function(message) {
-        var params = {
-            jobId: jobId,
-            failureDetails: {
-                message: JSON.stringify(message),
-                type: 'JobFailed',
-                externalExecutionId: context.invokeid
-            }
-        };
-        codepipeline.putJobFailureResult(params, function(err, data) {
-            context.fail(message);
-        });
-    };
-
-    // Validate the URL passed in UserParameters
-    if(!url || url.indexOf('http://') === -1) {
-        putJobFailure('The UserParameters field must contain a valid URL address to test, including http:// or https://');
-        return;
-    }
-
-    // Helper function to make a HTTP GET request to the page.
-    // The helper will test the response and succeed or fail the job accordingly
-    var getPage = function(url, callback) {
-        var pageObject = {
-            body: '',
-            statusCode: 0,
-            contains: function(search) {
-                return this.body.indexOf(search) > -1;
-            }
-        };
-        http.get(url, function(response) {
-            pageObject.body = '';
-            pageObject.statusCode = response.statusCode;
-
-            response.on('data', function (chunk) {
-                pageObject.body += chunk;
-            });
-
-            response.on('end', function () {
-                callback(pageObject);
-            });
-
-            response.resume();
-        }).on('error', function(error) {
-            // Fail the job if our request failed
-            putJobFailure(error);
-        });
-    };
-
-    getPage(url, function(returnedPage) {
-        try {
-            // Check if the HTTP response has a 200 status
-            assert(returnedPage.statusCode === 200);
-            // Check if the page contains the text "Congratulations"
-            // You can change this to check for different text, or add other tests as required
-            assert(returnedPage.contains('A Sample web application'));
-
-            // Succeed the job
-            putJobSuccess("Tests passed.");
-        } catch (ex) {
-            // If any of the assertions failed then fail the job
-            putJobFailure(ex);
-        }
-    });
-};
+```console
+~/environment/WebAppRepo (master) $ cp aws-devops-essential/templates/02-aws-devops-workshop-environment-setup.template ./WebAppRepo/
 ```
 
-12. Lets deploy the modified function by clicking the deploy button as shown below.
-![lambda-deploy](./img/lambda-deploy.png)
+2. Take a few minutes to review in the Cloud9 IDE the template we just copied. Check out some CloudFormation intrinsic functions and features (Mappings, Fn::Join, Ref, etc).
 
-13. Review the deployment changes by visiting the [Lambda console](https://console.aws.amazon.com/lambda). 
+3. Let’s push this template to our CodeCommit Repo:
+
+```console
+~/environment/WebAppRepo (master) $ git add 02-aws-devops-workshop-environment-setup.template
+~/environment/WebAppRepo (master) $ git commit -m "Added cf"
+~/environment/WebAppRepo (master) $ git push origin master
+```
+
+4. Create the following stage in our CodePipeline to deploy the infrastructure (VPC, EC2, Security Groups, etc.). Click on "Edit" button on the top right in the CodePipeline console:
+
+5. _Add a new stage to Pipeline after Source and before Build:__
+
+- __Stage Name__: `CreateEnv`
+
+- __Action provider__: `AWS CloudFormation`
+
+- __Action name__: `CreateResources`
+
+- __Input Artifact__: `SourceArtifact`
+
+- __Action mode__: `Create or update a stack`
+
+- __Stack name (select the stack that was created before)__: `DevopsWorkshop-Env`
+
+- __Template__: ```SourceArtifact::02-aws-devops-workshop-environment-setup.template```
+
+- __Capabilities__: `CAPABILITY_IAM`
+
+- __Role name__: select the one that contains `CFNRole` that was created before
+
+- __Output__: `CfOutput`
+
+The configurations should be:
+
+![1-5a](./img/Lab4-Stage-1-5a.png)
+
+![1-5b](./img/Lab4-Stage-1-5b.png)
+
+![1-5c](./img/Lab4-Stage-1-5c.png)
+
+6. On the CodePipeline pipeline click on the “Release” button to check if the Infrastructure is being deployed as code:
+
+![1-6](./img/Lab4-Stage-1-6.png)
 
 ***
 
-### Stage 2: Add the Lambda Function to a Pipeline in the AWS CodePipeline Console
+### Stage 2: Let’s put a little Sec into our DevOps pipeline:
 
-In this step, you will add a new stage to your pipeline, and then add an action — a Lambda action that calls your function in that stage.
+1. We will enforce a security rule that there must not exist security groups allowing open SSH port to the internet.
 
-1. **Edit** the pipeline. Choose the option to add a stage after the **Deploy** stage with the AWS CodeDeploy action. Type a name for the stage (for example, **LambdaTest**).
+![2-1](./img/Lab4-Stage-2-1.png)
 
-**_Note_**
-You can also choose to add your Lambda action to an existing stage. For demonstration purposes, we are adding the Lambda function as the only action in a stage to allow you to easily view its progress as artifacts progress through a pipeline. The event object, under the CodePipeline.job key, contains the [job details](http://docs.aws.amazon.com/codepipeline/latest/APIReference/API_JobDetails.html). For a full example of the JSON event AWS CodePipeline returns to Lambda, see [Example JSON Event](http://docs.aws.amazon.com/codepipeline/latest/userguide/actions-invoke-lambda-function.html#actions-invoke-lambda-function-json-event-example).
+The following actions are going to be performed in the stages of our Pipeline:
+1. __Source stage__: In this example, the pipeline gets the CloudFormation template from the CodeCommit repository that creates the VPC with NACL, IGW, security groups and EC2 instances.
 
-2. Choose **+ Add action group**,
-- Type a name for your Lambda action (for example, **MyLambdaAction**).
-- For **Action Provider**, choose **AWS Lambda**.
-- For **Function name**, choose or type the name of your Lambda function (for example, **MyLambdaFunctionForAWSCodePipeline**).
-- For **User parameters**, specify **http://** and the Public DNS address for the Amazon EC2 **DevWebApp01** instance you copied earlier (for example, http://ec2-52-62-36-220.ap-southeast-2.compute.amazonaws.com), and then choose **Save**.
+2. __StaticCodeAnalysis stage__: This stage passes the CloudFormation template and pipeline name to a Lambda function, CFNValidateLambda. This function performs the static code analysis. It uses the regular expression language to find patterns and identify security group policy violations. If it finds violations, then Lambda fails the pipeline and includes the violation details.
+Here is the regular expression that Lambda function using for static code analysis of the open SSH port:
 
-3. Finally, save changes to pipeline by clicking **Save** button on top..
+```console
+"^.*Ingress.*(([fF]rom[pP]ort|[tT]o[pP]ort).\s*:\s*u?.(22).*[cC]idr[iI]p.\s*:\s*u?.((0\.){3}0\/0)|[cC]idr[iI]p.\s*:\s*u?.((0\.){3}0\/0).*([fF]rom[pP]ort|[tT]o[pP]ort).\s*:\s*u?.(22))"
+```
 
-![lambdaAction](./img/Lab4-LambdaAction.png)
+2. __CreateEnv stage__: After the static code analysis is completed successfully, the pipeline creates the stack resources with the CloudFormation template.
+
+3. __DynamicStackValidation stage__: This step triggers the StackValidationLambda Lambda function. It passes the stack name and pipeline name in the event parameters. Lambda validates the security group deployed for the following security controls. If it finds violations, then Lambda deletes the stack, stops the pipeline, and returns an error message.
+
+The following is the sample Python code used by AWS Lambda to check if the SSH port is open to the approved IP CIDR range (in this example, 72.21.196.67/32):
+```python
+for n in regions:
+    client = boto3.client('ec2', region_name=n)
+    response = client.describe_security_groups(
+        Filters=[{'Name': 'tag:aws:cloudformation:stack-name', 'Values': [stackName]}])
+    for m in response['SecurityGroups']:
+        if "72.21.196.67/32" not in str(m['IpPermissions']):
+            for o in m['IpPermissions']:
+                try:
+                    if int(o['FromPort']) <= 22 <= int(o['ToPort']):
+                        result = False
+                        failReason = "Found Security Group with port 22 open to the wrong source IP range"
+                        offenders.append(str(m['GroupId']))
+                except:
+                    if str(o['IpProtocol']) == "-1":
+                        result = False
+                        failReason = "Found Security Group with port 22 open to the wrong source IP range"
+                        offenders.append(str(n) + " : " + str(m['GroupId']))
+```
+
+The next stages remain the same, building, deploying the code to dev and prod environments (with a manual approval action).
 
 ***
 
-### Stage 3: Test the Pipeline with the Lambda function
+### Stage 3: Deploy the resources:
+1. Create a S3 bucket and upload the zip file for our Lambda functions:
+```console
+aws s3 mb <YOUR-INITIALS>-$accountId-$region
+aws s3 cp ./codepipeline-lambda.zip s3://<YOUR-INITIALS>-$accountId-$region
+```
 
-To test the function, release the most recent change through the pipeline.
+2. Create the resources for our DevSecOps stages in the pipeline:
+```console
+aws cloudformation create-stack lab4-resources --template-body file://lab4-resources.json --capabilities CAPABILITY_IAM --parameters ParameterKey=S3Bucket,ParameterValue=<YOUR-INITIALS>-$accountId-$region --region $region
+```
 
-**_To use the console to run the most recent version of an artifact through a pipeline_**
+After the template deployment is complete, go to the CodePipeline console.
 
-1. On the pipeline details page, choose **Release change**. This will run the most recent revision available in each source location specified in a source action through the pipeline.
-2. When the Lambda action is complete, choose the **Details** link to view the log stream for the function in Amazon CloudWatch, including the billed duration of the event. If the function failed, the CloudWatch log will provide information about the cause.
+Add the following stages and actions in the pipeline:
 
-### Summary
+__Add stage to Pipeline after Source and before CreateEnv__
 
-This **concludes Lab 4**. In this lab, we successfully created Lambda function to test our application deployment. Now that you've successfully created a Lambda function and added it as an action in a pipeline, you can modify the Lambda function to check for a different text string.
+Stage Name: `StaticCodeAnalysis`
+
+Action name: `CFNParsing`
+lambda
+
+__Add stage to Pipeline after CreateEnv and before Build__
+
+Stage Name: `DynamicStackValidation`
+
+Action name: `StackValidation`
+lambda
+
+IMG
+
+Click on the “Release” button again to check the security validations.
+
+See that our pipeline has failed. Click on “Details” under the action “StaticCodeAnalysis” of the “CFNParsing” stage and then click on “Link to execution details”.
+
+IMG
+
+The CloudWatch logs associated to our Lambda function will be opened.
+Select the newest Log Stream and go to the bottom of the log:
+
+IMG
+
+We can see that the rules “IngressOpenToWorld” and “SSHOpenToWorld” matched, causing the pipeline to fail and the risk value associated.
+
+
+Verify the Lambda functions for seeing the security validation logic. Note that the first Lambda function checks DynamoDB for the security rules.
+
+Go to the DynamoDB console and check the “DDBRules”. See how rules, categories and risk values could be used to determine when to deploy to next stage or not. Security team could specify rules once and the automation would take care of the rest.
+
+IMG-DDB
+
+### Stage 4: Congratulations, you have finished the workshop!
+You have learned how to create your own secure, CI/CD pipeline with AWS tools like CodePipeline, CodeCommit, CodeBuild, CodeDeploy, CloudFormation, Lambda.
+
+[Check the this AWS blog post for more details on DevSecOps](https://aws.amazon.com/blogs/devops/implementing-devsecops-using-aws-codepipeline/).
+
 
 You can now proceed to cleanup all the resources
 

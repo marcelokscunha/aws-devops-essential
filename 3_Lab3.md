@@ -142,5 +142,5 @@ Once you approve, the pipeline continues and completes successfully.
 
 This **concludes Lab 3**. In this lab, we successfully created CodePipeline for continuous code build and deployment. We also modified CodePipeline to include manual approval action before deploying code to production environment. We also successfully completed continuous deployment of application to both test and production servers. You can now move to the next Lab,
 
-[Lab 4 (Optional) - Using Lambda as Test Stage in CodePipeline](4_Lab4.md)
+[Lab 4 - IaaC and DevSecOps](4_Lab4.md)
 
