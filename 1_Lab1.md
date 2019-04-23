@@ -72,10 +72,12 @@ Provide your Git HTTPs credential when prompted. You would be seeing the followi
 
 ### Stage 3: Commit changes to Remote Repo
 
-1. Download the Sample Web App Archive by running the following command from IDE terminal.
+1. Download the Sample Web App Archive and other configuration files by running the following commands from IDE terminal.
 
 ```console
 user:~/environment $ wget https://github.com/awslabs/aws-devops-essential/raw/master/sample-app/Web-App-Archive.zip
+
+user:~/environment $ git clone https://github.com/marcelokscunha/aws-devops-essential.git
 ```
 
 2. Unarchive and copy all the **_contents_** of the unarchived folder to your local repo folder.

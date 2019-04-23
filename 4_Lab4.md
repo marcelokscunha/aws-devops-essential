@@ -109,7 +109,8 @@ The next stages remain the same, building, deploying the code to dev and prod en
 1. Create a S3 bucket and upload the zip file for our Lambda functions:
 ```console
 ~/environment/WebAppRepo (master) $ aws s3 mb s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
-~/environment/WebAppRepo (master) $ aws s3 cp ../aws-devops-essential/sample-app/codepipeline-lambda.zip s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
+~/environment/WebAppRepo (master) $ aws s3 cp ../aws-devops-essential/sample-app/cfn_validate_lambda.py.zip s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
+~/environment/WebAppRepo (master) $ aws s3 cp ../aws-devops-essential/sample-app/stack_validate_lambda.py.zip s3://<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>
 ```
 
 2. Create the resources for our DevSecOps stages in the pipeline:
@@ -155,17 +156,17 @@ After the template deployment is complete, go to the console of your CodePipelin
 
     - __Function Name__: select function that starts with `lab4-resources-TestStackValidationLambda-...`
 
-    - __User parameters - optional__: leave blank
+    - __User parameters - optional__: `DevopsWorkshop-Env`
 
     - __Output artifacts__: leave blank
 
-4. Save the changes. Result should be:
+4. Save the changes. The result should be:
 
 ![3-1](./img/Lab4-Stage-3-1.png)
 ![3-2](./img/Lab4-Stage-3-2.png)
 
 
-4. Click on the “Release” button again to check the security validations.
+4. Click on the “Release” button again (upper right) to check the security validations.
 
 5. See that our pipeline has failed. Click on “Details” under the action “StaticCodeAnalysis” of the “CFNParsing” stage and then click on “Link to execution details”.
 
@@ -190,6 +191,16 @@ You have learned how to create your own secure, CI/CD pipeline with AWS tools li
 
 [Check the this AWS blog post for more details on DevSecOps](https://aws.amazon.com/blogs/devops/implementing-devsecops-using-aws-codepipeline/).
 
+
+### ***Stage extra (optional)***:
+Check the following repository:
+https://github.com/stelligent/pipeline-dashboard
+
+This solution developed by Stelligent shows how we could evaluate our pipeline metrics and use this data to evolve our DevOps organization.
+
+![extra-1](./img/Lab4-Stage-extra-1.png)
+
+### Cleanup:
 
 You can now proceed to cleanup all the resources
 
