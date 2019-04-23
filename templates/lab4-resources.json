@@ -135,7 +135,7 @@
         "Runtime":"python2.7"
       }
     },
-    "myDynamoDBTable" : {
+    "myDDBTable" : {
       "Type" : "AWS::DynamoDB::Table",
       "Properties" : {
        "AttributeDefinitions" : [

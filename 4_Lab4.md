@@ -22,9 +22,11 @@ We want to control our infrastrucure in order to enforce security policies.
 
 4. Create the following stage in our CodePipeline to deploy the infrastructure (VPC, EC2, Security Groups, etc.). Click on "Edit" button on the top right in the CodePipeline console:
 
-5. _Add a new stage to Pipeline after Source and before Build:__
+5. __Add a new stage to Pipeline after Source and before Build__ (if not specified leave as blank/default):
 
 - __Stage Name__: `CreateEnv`
+
+- Click on __"Add action group"__
 
 - __Action provider__: `AWS CloudFormation`
 
@@ -52,7 +54,7 @@ The configurations should be:
 
 ![1-5c](./img/Lab4-Stage-1-5c.png)
 
-6. On the CodePipeline pipeline click on the “Release” button to check if the Infrastructure is being deployed as code:
+6. Save the changes and on the top right click on the “Release” button to check if the Infrastructure is being deployed as code:
 
 ![1-6](./img/Lab4-Stage-1-6.png)
 
@@ -115,29 +117,57 @@ The next stages remain the same, building, deploying the code to dev and prod en
 ~/environment/WebAppRepo (master) $ aws cloudformation create-stack --stack-name lab4-resources --template-body file://../aws-devops-essential/templates/lab4-resources.json --capabilities CAPABILITY_IAM --parameters ParameterKey=S3Bucket,ParameterValue=<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>> --region <<REPLACE-YOUR-REGION-ID>>
 ```
 
-After the template deployment is complete, go to the CodePipeline console.
+After the template deployment is complete, go to the console of your CodePipeline pipeline.
 
-Add the following stages and actions in the pipeline:
+3. Add the following stages and actions in the pipeline (click on "Edit" button on the upper right):
 
-__Add stage to Pipeline after Source and before CreateEnv__
+    a. __Add stage to Pipeline after Source and before CreateEnv__
 
-Stage Name: `StaticCodeAnalysis`
+    - __Stage Name__: `StaticCodeAnalysis`
 
-Action name: `CFNParsing`
-lambda
+    - Click on __"Add action group"__
 
-__Add stage to Pipeline after CreateEnv and before Build__
+    - __Action name__: `CFNParsing`
 
-Stage Name: `DynamicStackValidation`
+    - __Action provider__: `AWS Lambda`
 
-Action name: `StackValidation`
-lambda
+    - __Input artifacts__: `SourceArtifact`
 
-IMG
+    - __Function Name__: select function that starts with `lab4-resources-CFNValidateLambda-...`
 
-Click on the “Release” button again to check the security validations.
+    - __User parameters - optional__: in the output key-value put the S3 bucket created before in this stage step 1.`{"input": "SourceArtifact", "file": "02-aws-devops-workshop-environment-setup.template","output": "<<YOUR-INITIALS>>-<<REPLACE-YOUR-ACCOUNT-ID>>-<<REPLACE-YOUR-REGION-ID>>"}`
 
-See that our pipeline has failed. Click on “Details” under the action “StaticCodeAnalysis” of the “CFNParsing” stage and then click on “Link to execution details”.
+        This Bucket will store the analysis of the template. The Lambda function will analyze the template and tag it, with "valid" or "flagged" depending on the risk score.
+
+    - __Output artifacts__: `SourceArtifact2`
+
+    b. __Add stage to Pipeline after CreateEnv and before Build__
+
+    - __Stage Name__: `DynamicStackValidation`
+
+    - Click on __"Add action group"__
+
+    - __Action name__: `StackValidation`
+
+    - __Action provider__: `AWS Lambda`
+
+    - __Input artifacts__: `SourceArtifact`
+
+    - __Function Name__: select function that starts with `lab4-resources-TestStackValidationLambda-...`
+
+    - __User parameters - optional__: leave blank
+
+    - __Output artifacts__: leave blank
+
+4. Save the changes. Result should be:
+
+![3-1](./img/Lab4-Stage-3-1.png)
+![3-2](./img/Lab4-Stage-3-2.png)
+
+
+4. Click on the “Release” button again to check the security validations.
+
+5. See that our pipeline has failed. Click on “Details” under the action “StaticCodeAnalysis” of the “CFNParsing” stage and then click on “Link to execution details”.
 
 IMG
 

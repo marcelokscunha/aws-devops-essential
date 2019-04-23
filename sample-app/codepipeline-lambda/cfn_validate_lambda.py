@@ -366,7 +366,7 @@ def lambda_handler(event, context):
     """
     try:
         # Print the entire event for tracking
-        print("Received event: " + json.dumps(event, indent=2))
+        print("Received event: " + json.dumps(event))#, indent=2))
 
         # Extract the Job ID
         job_id = event['CodePipeline.job']['id']
